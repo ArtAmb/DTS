@@ -88,6 +88,9 @@ public class Node {
 
         if (summary.isSuccessesCounterAtLeastHalf()) {
             becomeLeader();
+        } else {
+            this.votedFor = null;
+            resetElectionTimer();
         }
     }
 
@@ -205,6 +208,7 @@ public class Node {
             future.get(heartbeatIntervalTimeInMs - 10, TimeUnit.MILLISECONDS);
 
         } catch (Exception ex) {
+            log.error(ex);
             return Response.builder().nodeId(request.getTo()).msg(ex.getMessage()).success(false).build();
         }
 
