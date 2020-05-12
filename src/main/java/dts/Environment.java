@@ -42,8 +42,8 @@ public class Environment {
         uuidToNodeMap.values().forEach(Node::start);
 
 
-//        chaosMonkey(nodeNumber);
-        findAndDisableLeader();
+        chaosMonkey(nodeNumber);
+//        findAndDisableLeader();
     }
 
     private void findAndDisableLeader() throws InterruptedException {

@@ -27,7 +27,7 @@ public class Node {
 
     private int timeoutInMs;
     private int electionNumber;
-    private boolean disabled;
+    volatile private boolean disabled;
     private Timer timer = new Timer();
     private int heartbeatIntervalTimeInMs = 100;
     private final ConcurrentHashMap<UUID, Record> records;
@@ -215,12 +215,12 @@ public class Node {
         return Response.builder().nodeId(request.getTo()).success(true).build();
     }
 
-    public void disable() {
+    synchronized public void disable() {
         disabled = true;
         timer.cancel();
     }
 
-    public void enable() {
+    synchronized public void enable() {
         disabled = false;
         log.info(uuid + " is working again...");
         if (this.state.equals(NodeState.LEADER)) {
