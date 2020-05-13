@@ -42,14 +42,14 @@ public class Environment {
         uuidToNodeMap.values().forEach(Node::start);
 
 
-        chaosMonkey(nodeNumber);
-//        findAndDisableLeader();
+//        chaosMonkey(nodeNumber);
+        findAndDisableLeader();
     }
 
     private void findAndDisableLeader() throws InterruptedException {
-        Thread.sleep(1000);
 
         while (true) {
+            Thread.sleep(1000);
             Node leader = uuidToNodeMap.values().stream().filter(node -> NodeState.LEADER.equals(node.getState())).findFirst().orElse(null);
 
             if (leader == null) {

@@ -216,8 +216,11 @@ public class Node {
     }
 
     synchronized public void disable() {
+        log.info(uuid + " has been disabled");
         disabled = true;
         timer.cancel();
+
+        log.info(uuid + " DISALED ? " + disabled);
     }
 
     synchronized public void enable() {
@@ -228,6 +231,8 @@ public class Node {
         } else {
             resetElectionTimer();
         }
+
+        log.info(uuid + " DISALED ? " + disabled);
     }
 
     public void requestVote(Request request) throws InterruptedException {
