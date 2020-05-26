@@ -6,7 +6,11 @@ import java.util.UUID;
 
 @Builder
 public class Record {
-    private UUID id;
-    private RecordType type;
+    private String id;
     private String value;
+
+    public Record(String id, String value) {
+        this.id = id;
+        this.value = value;
+    }
 }

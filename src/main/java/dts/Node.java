@@ -1,21 +1,110 @@
 package dts;
 
 import dts.commands.AppendEntriesCommand;
+import dts.commands.ClientUpdateCommand;
 import dts.commands.RequestVoteCommand;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j;
+import lombok.val;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /* IMPORTANT !!!!!!!!!!!!!!!!!!!
    RAFT INFO
 
 https://indradhanush.github.io/blog/notes-on-raft/
-
+https://medium.com/@kasunindrasiri/understanding-raft-distributed-consensus-242ec1d2f521
 */
+
+class EntryLog {
+    private ArrayList<Operation> entryLog = new ArrayList<>();
+    private int lastConfirmedOperationIdx;
+
+    synchronized public void addAll(Collection<Operation> entries) {
+        entries.forEach(this::add);
+    }
+
+    synchronized public void addAllAsLeader(Collection<Operation> operations) {
+        operations.forEach(op -> {
+            if (entryLog.contains(op)) {
+                throw new IllegalStateException("Doubled actions - " + op.getOperationId());
+            }
+
+            int size = entryLog.size();
+            op.updateIndex(size);
+            entryLog.add(op.getOperationIndex(), op.markAsPotential());
+        });
+    }
+
+    public void add(Operation entry) {
+        if (entryLog.contains(entry)) {
+            return;
+        }
+
+//        Operation prev = entryLog.get(entry.getPrevIndex());
+        entryLog.add(entry.getOperationIndex(), entry.markAsPotential());
+    }
+
+    synchronized public void removeIf(Predicate<? super Operation> filter) {
+        entryLog.removeIf(filter);
+    }
+
+    public List<Operation> findOperations(int operationIndex) {
+        return entryLog.subList(operationIndex, entryLog.size() - 1);
+    }
+
+    synchronized public List<Operation> confirm(int lastCommittedIdx) {
+        List<Operation> confirmedOperations = entryLog.stream()
+                .filter(Operation::isPotential)
+                .filter(op -> op.getOperationIndex() <= lastCommittedIdx)
+                .peek(Operation::confirm)
+                .collect(Collectors.toList());
+
+        if (confirmedOperations.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        lastConfirmedOperationIdx = confirmedOperations.get(confirmedOperations.size() - 1).getOperationIndex();
+
+        return confirmedOperations;
+    }
+
+    public int getLastConfirmedOperationIdx() {
+        return lastConfirmedOperationIdx;
+    }
+
+    public void confirmAll() {
+        this.confirm(Integer.MAX_VALUE);
+    }
+}
+
+@Getter
+class OtherNode {
+    private final UUID uuid;
+    private int electionNumber;
+    private int lastOperationIdx;
+
+    public OtherNode(UUID otherNodeUUID) {
+        this.uuid = otherNodeUUID;
+    }
+
+    public void update(Response<AppendEntriesResult> res) {
+        if (res.getBody() == null)
+            return;
+
+        this.electionNumber = res.getBody().getElectionNumber();
+        this.lastOperationIdx = res.getBody().getLastIndex();
+    }
+
+    public boolean isConsistent(int electionNumber, int lastOperationIdx) {
+        return Objects.equals(this.lastOperationIdx, lastOperationIdx);
+//                && Objects.equals(this.electionNumber, electionNumber);
+    }
+}
 
 @Getter
 @Log4j
@@ -23,15 +112,17 @@ public class Node {
     private UUID uuid;
     private NodeState state;
     private ExecutorService executor = Executors.newCachedThreadPool();
-    private Set<UUID> otherNodes = new HashSet<>();
+    private Map<UUID, OtherNode> otherNodes = new ConcurrentHashMap<>();
 
     private int timeoutInMs;
     private int electionNumber;
+    private int lastOperationIndex;
     volatile private boolean disabled;
     private Timer timer = new Timer();
     private int heartbeatIntervalTimeInMs = 100;
-    private final ConcurrentHashMap<UUID, Record> records;
-    private LinkedList<Operation> entryLog = new LinkedList<>();
+    @Getter
+    private final ConcurrentHashMap<String, Record> records;
+    private EntryLog entryLog = new EntryLog();
 
 
     private UUID leaderUUID;
@@ -44,13 +135,14 @@ public class Node {
     public Node(UUID uuid,
                 NodeState state,
                 int timeoutInMs,
-                ConcurrentHashMap<UUID, Record> records,
+                ConcurrentHashMap<String, Record> records,
                 boolean disabled,
                 UUID leaderUUID) {
         this.uuid = uuid;
         this.state = state;
         this.timeoutInMs = timeoutInMs;
         this.electionNumber = 0;
+        this.lastOperationIndex = 0;
         this.records = records;
         this.disabled = disabled;
         this.leaderUUID = leaderUUID;
@@ -103,7 +195,8 @@ public class Node {
                 .type(RequestType.REQUEST_VOTE)
                 .from(uuid);
 
-        List<Response> responses = otherNodes.parallelStream()
+        List<Response> responses = otherNodes.values().parallelStream()
+                .map(OtherNode::getUuid)
                 .map(otherNodeUUID -> sendRequest(reqBuilder.to(otherNodeUUID).build()))
                 .collect(Collectors.toList());
 
@@ -133,23 +226,51 @@ public class Node {
     }
 
     private AllRequestSummary sendAppendEntriesToAllOtherNodes() {
-        AppendEntriesCommand command = AppendEntriesCommand.builder().operations(Collections.emptyList()).build();
 
-        Request.RequestBuilder reqBuilder = Request.builder()
-                .body(command)
-                .electionNumber(electionNumber)
-                .type(RequestType.APPEND_ENTRIES)
-                .from(uuid);
-
-        List<Response> responses = otherNodes.parallelStream()
-                .map(otherNodeUUID -> sendRequest(reqBuilder.to(otherNodeUUID).build()))
+        List<Response> responses = otherNodes.values().parallelStream()
+                .map(OtherNode::getUuid)
+                .map(this::appendEntriesForOneNode)
+                .peek(res -> {
+                    otherNodes.get(res.getNodeId()).update(res);
+                })
                 .collect(Collectors.toList());
 
         return new AllRequestSummary(responses);
     }
 
+    private Response<AppendEntriesResult> appendEntriesForOneNode(UUID otherNodeUUID) {
+        List<Operation> operations = prepareOperations(otherNodeUUID);
+
+        AppendEntriesCommand command = AppendEntriesCommand.builder()
+                .operations(operations)
+                .currentIndex(!operations.isEmpty() ? operations.get(operations.size() - 1).getOperationIndex() : lastOperationIndex)
+                .lastCommittedIndex(entryLog.getLastConfirmedOperationIdx())
+                .lastIndex(lastOperationIndex)
+                .build();
+
+        Request request = Request.builder()
+                .body(command)
+                .electionNumber(electionNumber)
+                .type(RequestType.APPEND_ENTRIES)
+                .from(uuid)
+                .to(otherNodeUUID)
+                .build();
+
+        return sendRequest(request, AppendEntriesResult.class);
+    }
+
+    private List<Operation> prepareOperations(UUID otherNodeUUID) {
+        OtherNode node = otherNodes.get(otherNodeUUID);
+
+        if (!node.isConsistent(this.electionNumber, this.lastOperationIndex)) {
+            return entryLog.findOperations(lastOperationIndex);
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
     private void confirmEntriesLog() {
-        // TODO ??????????
+        this.entryLog.confirmAll();
     }
 
     public static Node createNew() {
@@ -162,14 +283,17 @@ public class Node {
     }
 
     public void fillOtherNodes(Set<UUID> allNodes) {
-        this.otherNodes = allNodes.stream().filter(tmp -> !tmp.equals(uuid)).collect(Collectors.toSet());
+        this.otherNodes = allNodes.stream()
+                .filter(tmp -> !tmp.equals(uuid))
+                .map(OtherNode::new)
+                .collect(Collectors.toMap(OtherNode::getUuid, node -> node));
     }
 
-    public void appendEntries(Request request) throws InterruptedException {
+    public AppendEntriesResult appendEntries(Request request) throws InterruptedException {
         if (disabled) {
             log.info(uuid + " is DISABLED");
             Thread.sleep(ERROR_TIMEOUT);
-            return;
+            return null;
         }
 
         if (request.getElectionNumber() < this.electionNumber) {
@@ -184,13 +308,70 @@ public class Node {
             }
         }
 
-        leaderUUID = request.getFrom();
-
-        AppendEntriesCommand command = (AppendEntriesCommand) request.getBody();
-        entryLog.addAll(command.getOperations());
+        this.leaderUUID = request.getFrom();
         this.votedFor = null;
         this.electionNumber = request.getElectionNumber();
+
         resetElectionTimer();
+
+        AppendEntriesCommand command = (AppendEntriesCommand) request.getBody();
+
+        if (command.getLastIndex() == lastOperationIndex) {
+            appendNewEntries(command);
+        } else if (command.getLastIndex() > lastOperationIndex) {
+            return appendEntriesFailure();
+        } else if (command.getLastIndex() < lastOperationIndex) {
+            entryLog.removeIf(op -> op.getOperationIndex() > command.getLastIndex());
+            appendNewEntries(command);
+        }
+
+        confirmPotentialOperations(command);
+
+
+        return appendEntriesSuccess();
+    }
+
+    private void confirmPotentialOperations(AppendEntriesCommand command) {
+        List<Operation> operations = this.entryLog.confirm(command.getLastCommittedIndex());
+        updateCurrentState(operations);
+    }
+
+    private AppendEntriesResult appendEntriesFailure() {
+        return AppendEntriesResult.builder()
+                .success(false)
+                .electionNumber(electionNumber)
+                .lastIndex(lastOperationIndex)
+                .build();
+    }
+
+    private AppendEntriesResult appendEntriesSuccess() {
+        return AppendEntriesResult.builder()
+                .success(true)
+                .electionNumber(electionNumber)
+                .lastIndex(lastOperationIndex)
+                .build();
+    }
+
+    private void appendNewEntries(AppendEntriesCommand command) {
+        entryLog.addAll(command.getOperations());
+        lastOperationIndex = command.getCurrentIndex();
+    }
+
+    private void updateCurrentState(List<Operation> operations) {
+        for (val op : operations) {
+            switch (op.getType()) {
+
+                case ADD:
+                case MODIFY:
+                    records.put(op.getRecordId(), new Record(op.getRecordId(), op.getRecordValue()));
+                    break;
+                case DELETE:
+                    records.remove(op.getRecordId());
+                    break;
+            }
+
+
+        }
     }
 
     private String prepareErrMsgForOutdateLeader(Request request) {
@@ -201,18 +382,43 @@ public class Node {
         return "You are candidate of election " + request.getElectionNumber() + " but current election is " + this.electionNumber;
     }
 
-    public Response sendRequest(Request request) {
+    public Response<Object> sendRequest(Request request) {
+        return sendRequest(request, Object.class);
+    }
+
+    public <T extends Object> Response<T> sendRequest(Request request, Class<T> classOfT) {
         try {
 
             Future<?> future = executor.submit(() -> Network.getInstance().handle(request));
-            future.get(heartbeatIntervalTimeInMs - 10, TimeUnit.MILLISECONDS);
+            Object result = future.get(heartbeatIntervalTimeInMs - 10, TimeUnit.MILLISECONDS);
+
+            if (RequestType.APPEND_ENTRIES.equals(request.getType())) {
+                if (result == null) {
+                    return Response.<T>builder()
+                            .nodeId(request.getTo())
+                            .success(false)
+                            .build();
+                }
+
+                AppendEntriesResult appendEntriesResult = (AppendEntriesResult) result;
+
+                return Response.<T>builder()
+                        .nodeId(request.getTo())
+                        .success(appendEntriesResult.isSuccess())
+                        .body((T) appendEntriesResult)
+                        .build();
+            }
+
+            return Response.<T>builder()
+                    .nodeId(request.getTo())
+                    .success(true)
+                    .body((T) result)
+                    .build();
 
         } catch (Exception ex) {
             log.error(ex);
-            return Response.builder().nodeId(request.getTo()).msg(ex.getMessage()).success(false).build();
+            return (Response<T>) Response.builder().nodeId(request.getTo()).msg(ex.getMessage()).success(false).build();
         }
-
-        return Response.builder().nodeId(request.getTo()).success(true).build();
     }
 
     synchronized public void disable() {
@@ -252,5 +458,42 @@ public class Node {
 
         this.electionNumber = request.getElectionNumber();
         this.votedFor = request.getFrom();
+    }
+
+    synchronized public void updateState(Request request) {
+
+        if (NodeState.CANDIDATE.equals(this.state)) {
+            throw new IllegalStateException("ELECTION is executed");
+        }
+
+        if (NodeState.FOLLOWER.equals(this.state)) {
+            Request newRequest = Request.builder()
+                    .body(request.getBody())
+                    .electionNumber(electionNumber)
+                    .type(RequestType.REQUEST_VOTE)
+                    .from(uuid)
+                    .to(leaderUUID).build();
+
+            Network.getInstance().handle(newRequest);
+            return;
+        }
+
+        ClientUpdateCommand command = (ClientUpdateCommand) request.getBody();
+
+        List<Operation> newOperations = command.getActions().stream().map(action -> Operation.builder()
+                .operationId(UUID.randomUUID())
+                .electionNumber(this.electionNumber)
+                .type(action.getType())
+                .recordId(action.getRecordId())
+                .recordValue(action.getRecordValue())
+                .build()).collect(Collectors.toList());
+
+        entryLog.addAllAsLeader(newOperations);
+
+        doLeaderJob();
+    }
+
+    public int getLastCommittedIdx() {
+        return entryLog.getLastConfirmedOperationIdx();
     }
 }

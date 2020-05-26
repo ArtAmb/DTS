@@ -18,8 +18,7 @@ public class Network {
             Node node = env.getNode(request.getTo());
             switch (request.getType()) {
                 case APPEND_ENTRIES: {
-                    node.appendEntries(request);
-                    break;
+                    return node.appendEntries(request);
                 }
 
                 case REQUEST_VOTE: {
@@ -32,6 +31,7 @@ public class Network {
                 case READ_ALL:
                     break;
                 case UPDATE:
+                    node.updateState(request);
                     break;
             }
 

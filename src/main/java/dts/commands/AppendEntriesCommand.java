@@ -9,5 +9,9 @@ import java.util.List;
 @Getter
 @Builder
 public class AppendEntriesCommand {
+    int lastIndex;
+    int currentIndex;
+    int lastCommittedIndex;
+
     List<Operation> operations;
 }

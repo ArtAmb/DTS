@@ -2,11 +2,9 @@ package dts;
 
 import lombok.extern.log4j.Log4j;
 
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Log4j
 public class Environment {
@@ -85,5 +83,19 @@ public class Environment {
         node.enable();
     }
 
+
+    public List<NodeMachineState> getNodeStates() {
+        return this.uuidToNodeMap.values().stream().map(node -> {
+            return NodeMachineState.builder()
+                    .nodeId(node.getUuid())
+                    .nodeState(node.getState())
+                    .electionNumber(node.getElectionNumber())
+                    .lastOperationIdx(node.getLastOperationIndex())
+                    .lastCommittedIdx(node.getLastCommittedIdx())
+                    .votedFor(node.getVotedFor())
+                    .records(node.getRecords())
+                    .build();
+        }).collect(Collectors.toList());
+    }
 
 }

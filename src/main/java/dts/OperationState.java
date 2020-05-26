@@ -1,6 +1,6 @@
 package dts;
 
-public enum RecordType {
+public enum OperationState {
     CONFIRMED,
     POTENTIAL
 }
