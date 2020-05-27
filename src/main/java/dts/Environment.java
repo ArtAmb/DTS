@@ -1,5 +1,9 @@
 package dts;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import dts.commands.Action;
+import dts.commands.ClientUpdateCommand;
 import lombok.extern.log4j.Log4j;
 
 import java.util.*;
@@ -16,6 +20,7 @@ public class Environment {
 
     private Random rand = new Random();
     private ConcurrentHashMap<UUID, Node> uuidToNodeMap = new ConcurrentHashMap<>();
+    private Gson preattyGSON = new GsonBuilder().setPrettyPrinting().create();
 
     public void createNewNode() {
         Node node = Node.createNew();
@@ -41,7 +46,34 @@ public class Environment {
 
 
 //        chaosMonkey(nodeNumber);
-        findAndDisableLeader();
+//        findAndDisableLeader();
+
+
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(500);
+                    logAllNodesStates();
+                } catch (InterruptedException e) {
+                    log.info(e);
+                    throw new IllegalStateException(e);
+                }
+            }
+        }).start();
+
+
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                    update();
+                } catch (InterruptedException e) {
+                    log.info(e);
+                    throw new IllegalStateException(e);
+                }
+            }
+
+        }).start();
     }
 
     private void findAndDisableLeader() throws InterruptedException {
@@ -84,6 +116,11 @@ public class Environment {
     }
 
 
+    public void logAllNodesStates() {
+        log.info("================ ALL STATES =====================");
+        log.info(preattyGSON.toJson(getNodeStates()));
+    }
+
     public List<NodeMachineState> getNodeStates() {
         return this.uuidToNodeMap.values().stream().map(node -> {
             return NodeMachineState.builder()
@@ -98,4 +135,15 @@ public class Environment {
         }).collect(Collectors.toList());
     }
 
+
+    public void update() {
+        Action actions = Action.builder().recordId(UUID.randomUUID().toString()).recordValue(UUID.randomUUID().toString()).type(OperationType.ADD).build();
+        ClientUpdateCommand command = ClientUpdateCommand.builder().actions(Collections.singletonList(actions)).build();
+        Node leader = uuidToNodeMap.values()
+                .stream()
+                .filter(node -> NodeState.LEADER.equals(node.getState())).findFirst().orElseThrow(() -> new IllegalStateException("No leader"));
+
+        Request req = Request.builder().type(RequestType.UPDATE).body(command).to(leader.getUuid()).build();
+        Network.getInstance().handle(req);
+    }
 }

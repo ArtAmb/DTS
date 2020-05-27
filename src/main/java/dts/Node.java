@@ -54,6 +54,13 @@ class EntryLog {
     }
 
     public List<Operation> findOperations(int operationIndex) {
+        if (entryLog.isEmpty())
+            return Collections.emptyList();
+
+        if (operationIndex < 0) {
+            return entryLog.subList(0, entryLog.size() - 1);
+        }
+
         return entryLog.subList(operationIndex, entryLog.size() - 1);
     }
 
@@ -77,8 +84,17 @@ class EntryLog {
         return lastConfirmedOperationIdx;
     }
 
-    public void confirmAll() {
-        this.confirm(Integer.MAX_VALUE);
+    public List<Operation> confirmAll() {
+        return this.confirm(Integer.MAX_VALUE);
+    }
+
+    public int getLastOperationIdx() {
+        if (entryLog.isEmpty()) {
+            return -1;
+        }
+
+        return this.entryLog.get(this.entryLog.size() - 1).getOperationIndex();
+
     }
 }
 
@@ -142,7 +158,7 @@ public class Node {
         this.state = state;
         this.timeoutInMs = timeoutInMs;
         this.electionNumber = 0;
-        this.lastOperationIndex = 0;
+        this.lastOperationIndex = -1;
         this.records = records;
         this.disabled = disabled;
         this.leaderUUID = leaderUUID;
@@ -260,17 +276,23 @@ public class Node {
     }
 
     private List<Operation> prepareOperations(UUID otherNodeUUID) {
+        this.lastOperationIndex = entryLog.getLastOperationIdx();
         OtherNode node = otherNodes.get(otherNodeUUID);
 
-        if (!node.isConsistent(this.electionNumber, this.lastOperationIndex)) {
-            return entryLog.findOperations(lastOperationIndex);
-        } else {
-            return Collections.emptyList();
-        }
+
+        return entryLog.findOperations(node.getLastOperationIdx());
+
+//        if (!node.isConsistent(this.electionNumber, this.lastOperationIndex)) {
+//            return entryLog.findOperations(node.getLastOperationIdx());
+//        } else {
+//            return Collections.emptyList();
+//        }
     }
 
     private void confirmEntriesLog() {
-        this.entryLog.confirmAll();
+        List<Operation> operations = this.entryLog.confirmAll();
+        updateCurrentState(operations);
+
     }
 
     public static Node createNew() {
@@ -296,8 +318,20 @@ public class Node {
             return null;
         }
 
+        AppendEntriesCommand command = (AppendEntriesCommand) request.getBody();
+        if (command.getOperations().size() > 0 && !this.state.equals(NodeState.LEADER)) {
+            log.info("NORMAL NODE =======> " + uuid);
+        }
+
+        resetElectionTimer();
+
         if (request.getElectionNumber() < this.electionNumber) {
             throw new IllegalStateException(prepareErrMsgForOutdateLeader(request));
+        }
+
+        if (request.getElectionNumber() == this.electionNumber && NodeState.CANDIDATE.equals(this.state)) {
+            this.state = NodeState.FOLLOWER;
+            log.info("Node " + uuid + " was candidate but become follower - " + this.electionNumber + " " + request.getElectionNumber());
         }
 
         if (NodeState.LEADER.equals(state)) {
@@ -312,15 +346,14 @@ public class Node {
         this.votedFor = null;
         this.electionNumber = request.getElectionNumber();
 
-        resetElectionTimer();
-
-        AppendEntriesCommand command = (AppendEntriesCommand) request.getBody();
-
         if (command.getLastIndex() == lastOperationIndex) {
+            log.info("NODE " + uuid + "command.getLastIndex() == lastOperationIndex");
             appendNewEntries(command);
         } else if (command.getLastIndex() > lastOperationIndex) {
-            return appendEntriesFailure();
+            log.info("NODE " + uuid + "command.getLastIndex() > lastOperationIndex");
+            appendNewEntries(command);
         } else if (command.getLastIndex() < lastOperationIndex) {
+            log.info("NODE " + uuid + "cop.getOperationIndex() > command.getLastIndex()");
             entryLog.removeIf(op -> op.getOperationIndex() > command.getLastIndex());
             appendNewEntries(command);
         }
@@ -448,6 +481,16 @@ public class Node {
             return;
         }
 
+        if(request.getElectionNumber() > electionNumber) {
+            log.info("NODE " + this.uuid + " new election started " + request.getElectionNumber() + " My election " + electionNumber + " give vote and become follower");
+            this.electionNumber = request.getElectionNumber();
+            this.state = NodeState.FOLLOWER;
+            this.votedFor = request.getFrom();
+
+            resetElectionTimer();
+            return;
+        }
+
         if (votedFor != null) {
             throw new IllegalStateException(uuid + " -> already voted for node " + votedFor);
         }
@@ -460,7 +503,7 @@ public class Node {
         this.votedFor = request.getFrom();
     }
 
-    synchronized public void updateState(Request request) {
+    public void updateState(Request request) {
 
         if (NodeState.CANDIDATE.equals(this.state)) {
             throw new IllegalStateException("ELECTION is executed");

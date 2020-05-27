@@ -10,8 +10,7 @@ import java.util.Objects;
 public class Main {
 
     public static void main(String[] args) throws InterruptedException {
-        Environment.getInstance().runSimulation(2);
-//        tmpTest();
+        Environment.getInstance().runSimulation(3);
     }
 
 
