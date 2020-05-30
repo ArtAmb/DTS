@@ -1,0 +1,178 @@
+/* Global Styles */
+@import "~@angular/material/prebuilt-themes/deeppurple-amber.css";
+
+.material-icons.md-18 {
+  font-size: 18px;
+}
+.material-icons.md-24 {
+  font-size: 24px;
+}
+.material-icons.md-36 {
+  font-size: 36px;
+}
+.material-icons.md-48 {
+  font-size: 48px;
+}
+.material-icons.clickable {
+  cursor: pointer;
+}
+
+* {
+  font-family: "Roboto", Arial, sans-serif;
+  color: #616161;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+}
+
+router-outlet + * {
+  padding: 0 16px;
+}
+
+/* Text */
+
+h1 {
+  font-size: 32px;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+h1,
+h2 {
+  font-weight: lighter;
+}
+
+p {
+  font-size: 14px;
+}
+
+/* Hyperlink */
+
+a {
+  cursor: pointer;
+  color: #1976d2;
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+/* Input */
+
+input {
+  font-size: 14px;
+  border-radius: 2px;
+  padding: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #bdbdbd;
+}
+
+label {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  display: block;
+  text-transform: uppercase;
+}
+
+/* Button */
+.button,
+button {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 2px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+}
+
+.button:hover,
+button:hover {
+  opacity: 0.8;
+  font-weight: normal;
+}
+
+.button:disabled,
+button:disabled {
+  opacity: 0.5;
+  cursor: auto;
+}
+
+/* Fancy Button */
+
+.fancy-button {
+  background-color: white;
+  color: #1976d2;
+}
+
+.fancy-button i.material-icons {
+  color: #1976d2;
+  padding-right: 4px;
+}
+
+/* Top Bar */
+
+app-top-bar {
+  width: 100%;
+  height: 68px;
+  position: fixed;
+  background-color: #1976d2;
+  padding: 16px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 999;
+}
+
+app-top-bar h1 {
+  color: white;
+  margin: 0;
+}
+
+app-left-bar {
+  height: 100%;
+  width: 10%;
+  position: fixed;
+  z-index: 1;
+  top: 68px;
+  left: 0;
+  background-color: #fff;
+  overflow-x: hidden;
+  padding: 30px 10px;
+  transition: 0.5s;
+  border-right:1px solid #bdbdbd;
+}
+
+app-right-bar {
+  height: 100%;
+  width: 15%;
+  position: fixed;
+  z-index: 1;
+  right: 0;
+  top: 68px;
+  background-color: #fff;
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding: 30px 10px;
+  border-left:1px solid #bdbdbd;
+}
+
+.main-content {
+  padding-top: 70px;
+  padding-left: 14%;
+  width: 75%;
+}
+.avatar-image .image {
+  width: 200px !important;
+}
