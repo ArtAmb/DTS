@@ -15,6 +15,9 @@ import { APP_ROUTES } from "./routes";
 import { MainViewComponent } from "./main-view/main-view/main-view.component";
 
 import { MatDialogModule } from "@angular/material/dialog";
+import { NodesViewComponent } from "./main-view/main-view/nodes-view/nodes-view.component";
+import { NodeComponent } from "./main-view/main-view/node/node.component";
+import { StartButtonComponent } from "./main-view/main-view/start-button/start-button.component";
 
 
 @NgModule({
@@ -38,6 +41,9 @@ import { MatDialogModule } from "@angular/material/dialog";
     LeftBarComponent,
     RightBarComponent,
     MainViewComponent,
+    NodesViewComponent,
+    NodeComponent,
+    StartButtonComponent
   ],
   bootstrap: [AppComponent],
   providers: [],

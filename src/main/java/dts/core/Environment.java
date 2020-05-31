@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dts.commands.Action;
 import dts.commands.ClientUpdateCommand;
+import dts.spring.SimulationRunningDTO;
 import lombok.extern.log4j.Log4j;
 
 import java.util.*;
@@ -21,6 +22,7 @@ public class Environment {
     private Random rand = new Random();
     private ConcurrentHashMap<UUID, Node> uuidToNodeMap = new ConcurrentHashMap<>();
     private Gson preattyGSON = new GsonBuilder().setPrettyPrinting().create();
+    private boolean simulationRunning = false;
 
     public void createNewNode() {
         Node node = Node.createNew();
@@ -44,24 +46,34 @@ public class Environment {
         uuidToNodeMap.values().forEach(this::print);
         uuidToNodeMap.values().forEach(Node::start);
 
+        simulationRunning = true;
+
 
 //        chaosMonkey(nodeNumber);
 //        findAndDisableLeader();
 
 
-        new Thread(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(500);
-                    logAllNodesStates();
-                } catch (InterruptedException e) {
-                    log.info(e);
-                    throw new IllegalStateException(e);
-                }
-            }
-        }).start();
+//        startLoggingState();
+//        startRandomUpdating();
+    }
 
+    public void stopSimulation() {
+        uuidToNodeMap.values().forEach(Node::disable);
+        uuidToNodeMap.clear();
 
+        simulationRunning = false;
+
+        log.info("SIMULATION STOPPED");
+    }
+
+    public SimulationRunningDTO isSimulationRunning() {
+        return SimulationRunningDTO.builder()
+                .running(this.simulationRunning)
+                .nodesNumber(this.uuidToNodeMap.keySet().size())
+                .build();
+    }
+
+    private void startRandomUpdating() {
         new Thread(() -> {
             while (true) {
                 try {
@@ -73,6 +85,20 @@ public class Environment {
                 }
             }
 
+        }).start();
+    }
+
+    private void startLoggingState() {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(500);
+                    logAllNodesStates();
+                } catch (InterruptedException e) {
+                    log.info(e);
+                    throw new IllegalStateException(e);
+                }
+            }
         }).start();
     }
 

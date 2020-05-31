@@ -1,0 +1,13 @@
+<div>
+  <div>
+    <span>Ilość węzłów: </span>
+    <input *ngIf="!simulationRunning" [(ngModel)]="nodesNumber" />
+    <span *ngIf="simulationRunning">{{ nodesNumber }}</span>
+  </div>
+  <div>
+    <button *ngIf="!simulationRunning" (click)="startSimulation()">
+      Start
+    </button>
+    <button *ngIf="simulationRunning" (click)="stopSimulation()">Stop</button>
+  </div>
+</div>
