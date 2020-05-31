@@ -1,6 +1,6 @@
 package dts.commands;
 
-import dts.OperationType;
+import dts.core.OperationType;
 import lombok.Builder;
 import lombok.Value;
 

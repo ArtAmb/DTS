@@ -1,4 +1,4 @@
-package dts;
+package dts.core;
 
 import dts.commands.AppendEntriesCommand;
 import dts.commands.ClientUpdateCommand;

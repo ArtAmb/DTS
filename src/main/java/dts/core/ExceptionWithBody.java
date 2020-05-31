@@ -1,4 +1,4 @@
-package dts;
+package dts.core;
 
 public class ExceptionWithBody extends RuntimeException {
 

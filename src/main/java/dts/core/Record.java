@@ -1,4 +1,4 @@
-package dts;
+package dts.core;
 
 import lombok.Builder;
 

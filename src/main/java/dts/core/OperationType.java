@@ -1,4 +1,4 @@
-package dts;
+package dts.core;
 
 public enum OperationType {
     ADD,
