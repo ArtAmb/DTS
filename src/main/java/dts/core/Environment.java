@@ -156,6 +156,7 @@ public class Environment {
                     .lastOperationIdx(node.getLastOperationIndex())
                     .lastCommittedIdx(node.getLastCommittedIdx())
                     .votedFor(node.getVotedFor())
+                    .disabled(node.isDisabled())
                     .records(node.getRecords())
                     .build();
         }).collect(Collectors.toList());

@@ -1,0 +1,20 @@
+.dot {
+  margin-top: 15px;
+  height: 80px;
+  width: 80px;
+  background-color: green;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.disabled {
+  background-color: red !important;
+}
+
+.leader {
+  background-color: yellow !important;
+}
+
+.candidate {
+  background-color: gray !important;
+}

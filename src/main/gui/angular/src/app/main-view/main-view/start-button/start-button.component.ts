@@ -42,6 +42,7 @@ export class StartButtonComponent implements OnInit {
       .subscribe(
         (res) => {
           this.simulationRunning = true;
+          this.stateServcie.setSimulation(this.simulationRunning);
         },
         (err) => {
           this.notifyService.failure(err);
@@ -53,6 +54,7 @@ export class StartButtonComponent implements OnInit {
     this.restService.stopSimulation().subscribe(
       (res) => {
         this.simulationRunning = false;
+        this.stateServcie.setSimulation(this.simulationRunning);
       },
       (err) => {
         this.notifyService.failure(err);

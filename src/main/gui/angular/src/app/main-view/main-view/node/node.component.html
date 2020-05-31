@@ -1,3 +1,30 @@
-<p>
-  node works!
-</p>
+<table>
+  <tr>
+    <td>
+      <span
+        class="dot"
+        [ngClass]="{
+          leader: node.nodeState == 'LEADER',
+          candidate: node.nodeState == 'CANDIDATE',
+          disabled: node.disabled
+        }"
+      ></span>
+    </td>
+    <td>
+      <tr>
+        <td><strong>ELEKCJA</strong></td>
+        <td>
+          <strong>{{ node.electionNumber }}</strong>
+        </td>
+      </tr>
+      <tr>
+        <td>Last committed</td>
+        <td>{{ node.lastCommittedIdx }}</td>
+      </tr>
+      <tr>
+        <td>Last operation</td>
+        <td>{{ node.lastOperationIdx }}</td>
+      </tr>
+    </td>
+  </tr>
+</table>

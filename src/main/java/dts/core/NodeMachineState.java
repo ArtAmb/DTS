@@ -17,5 +17,7 @@ public class NodeMachineState {
     private final int electionNumber;
     private final UUID votedFor;
 
+    private final boolean disabled;
+
     private final Map<String, Record> records;
 }

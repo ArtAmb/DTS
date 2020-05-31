@@ -7,6 +7,8 @@ export class Node {
     electionNumber: number;
     votedFor: String;
 
+    disabled: boolean;
+
     records: any;
 }
 
