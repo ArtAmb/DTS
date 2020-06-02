@@ -2,6 +2,7 @@ import { Component, OnInit, Input } from "@angular/core";
 import { Node } from "./node.model";
 import { RestService } from "../rest.service";
 import { NotificationService } from "src/app/utils/notificationService.service";
+import { StateService } from "../state.service";
 
 @Component({
   selector: "app-node",
@@ -12,7 +13,8 @@ export class NodeComponent implements OnInit {
   @Input() node: Node;
   constructor(
     private restService: RestService,
-    private notifyService: NotificationService
+    private notifyService: NotificationService,
+    private stateService: StateService
   ) {}
 
   ngOnInit() {}
@@ -33,5 +35,9 @@ export class NodeComponent implements OnInit {
         this.notifyService.failure(err);
       }
     );
+  }
+
+  isRecordsViewEnable() {
+    return this.stateService.showRecordsEnable;
   }
 }

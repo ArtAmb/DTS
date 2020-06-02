@@ -16,6 +16,24 @@ export class ButtonsComponent implements OnInit {
   ) {}
 
   testingAlgorithm: TestingAlgorithm = TestingAlgorithm.NONE;
+
+  isShowRecordEnable() {
+    return this.stateServcie.showRecordsEnable;
+  }
+
+  setShowRecord(value: boolean) {
+    this.stateServcie.setShowRecords(value);
+  }
+
+  setNodesFlow(value: string) {
+    this.stateServcie.setNodesFlow(value);
+  }
+
+  getNodesViewFlow() {
+    return this.stateServcie.nodeFlow;
+  }
+
+
   ngOnInit() {
     this.setTestingAlgorithm();
   }

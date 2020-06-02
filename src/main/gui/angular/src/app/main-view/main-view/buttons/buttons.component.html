@@ -21,3 +21,19 @@
     </div>
   </div>
 </div>
+
+<div style="margin-top: 25px;">
+  <button *ngIf="!isShowRecordEnable()" (click)="setShowRecord(true)" >
+    SHOW RECORDS
+  </button>
+  <button *ngIf="isShowRecordEnable()" (click)="setShowRecord(false)">
+    HIDE RECORDS
+  </button>
+
+  <button *ngIf="getNodesViewFlow() == 'VERTICAL'" (click)="setNodesFlow('HORIZONTAL')" >
+    HORIZONTAL
+  </button>
+  <button *ngIf="getNodesViewFlow() == 'HORIZONTAL'" (click)="setNodesFlow('VERTICAL')">
+    VERTICAL
+  </button>
+</div>

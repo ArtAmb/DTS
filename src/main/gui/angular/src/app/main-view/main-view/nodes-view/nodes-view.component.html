@@ -1,17 +1,27 @@
-<div *ngFor="let node of allNodes">
-  <app-node [node]="node"></app-node>
+<div *ngIf="isVertical()">
+  <div *ngFor="let node of allNodes">
+    <app-node [node]="node"></app-node>
+  </div>
+</div>
+
+<div *ngIf="isHorizontal()">
+  <table>
+    <tr>
+      <td style="margin-right: 10px;" *ngFor="let node of allNodes">
+        <app-node [node]="node"></app-node>
+      </td>
+    </tr>
+  </table>
 </div>
 
 <div>
   <span *ngFor="let nodeInfo of getNodesInfo()">
-    <button class="margin-left: 10px" (click)="switchNodeState(nodeInfo.nodeId)">SWITCH</button>
+    <button style="margin-right: 10px;" (click)="switchNodeState(nodeInfo.nodeId)">SWITCH</button>
   </span>
 </div>
 
-
-<div>
-  <input [(ngModel)]="recordKey"/>
-  <input [(ngModel)]="recordValue"/>
-  <br/>
+<div style="margin-top: 20px;">
+  <input [(ngModel)]="recordKey" /><input [(ngModel)]="recordValue" />
+  <br />
   <button (click)="saveRecord()">SAVE</button>
 </div>

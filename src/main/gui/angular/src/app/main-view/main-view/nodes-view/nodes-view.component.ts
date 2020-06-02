@@ -3,6 +3,7 @@ import { RestService, OperationType } from "../rest.service";
 import { NotificationService } from "src/app/utils/notificationService.service";
 import { interval } from "rxjs";
 import { StateService } from "../state.service";
+import { Node } from "../node/node.model";
 
 @Component({
   selector: "app-nodes-view",
@@ -71,5 +72,14 @@ export class NodesViewComponent implements OnInit {
         this.notifyService.failure(err);
       }
     );
+  }
+
+
+  isHorizontal(): boolean {
+    return this.stateService.nodeFlow == 'HORIZONTAL';
+  }
+
+  isVertical(): boolean {
+    return this.stateService.nodeFlow == 'VERTICAL';
   }
 }

@@ -31,4 +31,10 @@
       <button *ngIf="node.disabled" (click)="enableNode()">ENABLE</button>
     </td> -->
   </tr>
+
+  <span *ngIf="isRecordsViewEnable()">
+    <tr *ngFor="let record of node.records | keyvalue">
+      <td>{{ record.key }} : {{ record.value.value }}</td>
+    </tr>
+  </span>
 </table>

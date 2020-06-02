@@ -5,11 +5,14 @@ import { Node } from "./node/node.model";
   providedIn: "root",
 })
 export class StateService {
+  
   constructor() {}
 
   simulation: boolean;
   nodes: NodeState[];
   nodeCounter: number = 0;
+  showRecordsEnable: boolean = false;
+  nodeFlow: string = 'VERTICAL';
 
   public isSimulationRunning() {
     return this.simulation;
@@ -32,6 +35,14 @@ export class StateService {
         nodeIdx: ++this.nodeCounter
       } 
     });
+  }
+
+  public setShowRecords(value: boolean) {
+    this.showRecordsEnable = value;
+  }
+
+  public setNodesFlow(value: string) {
+    this.nodeFlow = value;
   }
 }
 
