@@ -323,8 +323,6 @@ public class Node {
             log.info("NORMAL NODE =======> " + uuid);
         }
 
-        resetElectionTimer();
-
         if (request.getElectionNumber() < this.electionNumber) {
             throw new IllegalStateException(prepareErrMsgForOutdateLeader(request));
         }
@@ -341,6 +339,8 @@ public class Node {
                 this.state = NodeState.FOLLOWER;
             }
         }
+
+        resetElectionTimer();
 
         this.leaderUUID = request.getFrom();
         this.votedFor = null;
