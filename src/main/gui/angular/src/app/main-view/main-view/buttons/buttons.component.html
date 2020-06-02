@@ -1,0 +1,23 @@
+<div>
+  <button (click)="startChaosMonkey()" [disabled]="!isButtonEnabled()">
+    CHAOS MONEKY
+  </button>
+
+  <button
+    (click)="startFindAndDisableLeader()"
+    [disabled]="!isButtonEnabled()"
+  >
+    FIND AND DISABLE LEADER
+  </button>
+
+  <div *ngIf="testingAlgorithm != 'NONE'">
+    <div>
+      {{ testingAlgorithm }}
+    </div>
+    <div>
+      <button (click)="stopTesting()">
+        STOP
+      </button>
+    </div>
+  </div>
+</div>

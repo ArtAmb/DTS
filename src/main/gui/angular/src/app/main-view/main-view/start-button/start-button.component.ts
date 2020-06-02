@@ -24,8 +24,12 @@ export class StartButtonComponent implements OnInit {
         this.simulationRunning = res.running;
         this.nodesNumber = res.nodesNumber;
 
-        if(!res.running) {
+        if (!res.running) {
           this.nodesNumber = 5;
+        }
+
+        if (res.running) {
+          this.fillNodeStates();
         }
       },
       (err) => {
@@ -43,11 +47,24 @@ export class StartButtonComponent implements OnInit {
         (res) => {
           this.simulationRunning = true;
           this.stateServcie.setSimulation(this.simulationRunning);
+
+          this.fillNodeStates();
         },
         (err) => {
           this.notifyService.failure(err);
         }
       );
+  }
+
+  fillNodeStates() {
+    this.restService.getAllNodes().subscribe(
+      (res) => {
+        this.stateServcie.setNodes(res);
+      },
+      (err) => {
+        this.notifyService.failure(err);
+      }
+    );
   }
 
   stopSimulation() {

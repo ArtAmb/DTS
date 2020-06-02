@@ -1,11 +1,15 @@
 package dts.commands;
 
 import dts.core.OperationType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Builder
-@Value
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
 public class Action {
     private OperationType type;
     private String recordId;

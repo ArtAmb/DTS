@@ -1,3 +1,17 @@
 <div *ngFor="let node of allNodes">
   <app-node [node]="node"></app-node>
 </div>
+
+<div>
+  <span *ngFor="let nodeInfo of getNodesInfo()">
+    <button class="margin-left: 10px" (click)="switchNodeState(nodeInfo.nodeId)">SWITCH</button>
+  </span>
+</div>
+
+
+<div>
+  <input [(ngModel)]="recordKey"/>
+  <input [(ngModel)]="recordValue"/>
+  <br/>
+  <button (click)="saveRecord()">SAVE</button>
+</div>

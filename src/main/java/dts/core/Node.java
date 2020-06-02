@@ -459,7 +459,7 @@ public class Node {
         disabled = true;
         timer.cancel();
 
-        log.info(uuid + " DISALED ? " + disabled);
+        log.info(uuid + " DISABLED ? " + disabled);
     }
 
     synchronized public void enable() {
@@ -481,7 +481,7 @@ public class Node {
             return;
         }
 
-        if(request.getElectionNumber() > electionNumber) {
+        if (request.getElectionNumber() > electionNumber) {
             log.info("NODE " + this.uuid + " new election started " + request.getElectionNumber() + " My election " + electionNumber + " give vote and become follower");
             this.electionNumber = request.getElectionNumber();
             this.state = NodeState.FOLLOWER;
@@ -538,5 +538,14 @@ public class Node {
 
     public int getLastCommittedIdx() {
         return entryLog.getLastConfirmedOperationIdx();
+    }
+
+    synchronized public void switchState() {
+        if (isDisabled()) {
+            enable();
+        } else {
+            disable();
+        }
+
     }
 }

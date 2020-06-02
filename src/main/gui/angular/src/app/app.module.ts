@@ -18,6 +18,7 @@ import { MatDialogModule } from "@angular/material/dialog";
 import { NodesViewComponent } from "./main-view/main-view/nodes-view/nodes-view.component";
 import { NodeComponent } from "./main-view/main-view/node/node.component";
 import { StartButtonComponent } from "./main-view/main-view/start-button/start-button.component";
+import { ButtonsComponent } from "./main-view/main-view/buttons/buttons.component";
 
 
 @NgModule({
@@ -43,6 +44,7 @@ import { StartButtonComponent } from "./main-view/main-view/start-button/start-b
     MainViewComponent,
     NodesViewComponent,
     NodeComponent,
+    ButtonsComponent,
     StartButtonComponent
   ],
   bootstrap: [AppComponent],

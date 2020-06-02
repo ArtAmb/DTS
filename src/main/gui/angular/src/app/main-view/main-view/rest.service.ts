@@ -27,6 +27,43 @@ export class RestService {
         return this.http.get(environment.server_url + "/simulation/is-running");
     }
 
+    public startChaosMonkey(): Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/chaos-monkey/start", null);
+    }
+
+    public stopChaosMonkey(): Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/chaos-monkey/stop", null);
+    }
+
+    public startFindAndDisableLeader(): Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/find-and-disable-leader/start", null);
+    }
+
+    public stopFindAndDisableLeader(): Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/find-and-disable-leader/stop", null);
+    }
+
+    public findTestingAlgorithm() : Observable<any>  { 
+        return this.http.get(environment.server_url + "/simulation/testing-algorithm");
+    }
+
+    public disableNode(nodeId: string) : Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/nodes/" + nodeId + "/disable", null);
+    }
+    
+    public enableNode(nodeId: string) : Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/nodes/" + nodeId + "/enable", null);
+    }
+
+    public switchNodeState(nodeId: string) : Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/nodes/" + nodeId + "/switch", null);
+    }
+
+    public saveRecord(cmd: RecordCommand) : Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/record/save", cmd);
+    }
+
+
 }
 
 class StartSimulationCommand {
@@ -36,4 +73,16 @@ class StartSimulationCommand {
 export class SimulationRunningDTO {
     nodesNumber: number;
     running: boolean;
+}
+
+export class RecordCommand {
+    type: OperationType;
+    recordId: string;
+    recordValue: string;
+}
+
+export  enum OperationType {
+    ADD="ADD",
+    DELETE="DELETE",
+    MODIFY="MODIFY"
 }

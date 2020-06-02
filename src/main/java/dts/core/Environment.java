@@ -24,6 +24,11 @@ public class Environment {
     private Gson preattyGSON = new GsonBuilder().setPrettyPrinting().create();
     private boolean simulationRunning = false;
 
+    private Thread chaosMonkeyThread = null;
+    private Thread findAndDisableLeaderThread = null;
+
+    private TestingAlgorithm testingAlgorithm = TestingAlgorithm.NONE;
+
     public void createNewNode() {
         Node node = Node.createNew();
 
@@ -62,6 +67,9 @@ public class Environment {
         uuidToNodeMap.clear();
 
         simulationRunning = false;
+        testingAlgorithm = TestingAlgorithm.NONE;
+        stopChaosMonkey();
+        stopFindAndDisableLeader();
 
         log.info("SIMULATION STOPPED");
     }
@@ -102,32 +110,69 @@ public class Environment {
         }).start();
     }
 
-    private void findAndDisableLeader() throws InterruptedException {
+    public void findAndDisableLeader() {
+        this.findAndDisableLeaderThread = new Thread(() -> {
+            try {
+                while (true) {
+                    Thread.sleep(1000);
+                    Node leader = uuidToNodeMap.values().stream().filter(node -> NodeState.LEADER.equals(node.getState())).findFirst().orElse(null);
 
-        while (true) {
-            Thread.sleep(1000);
-            Node leader = uuidToNodeMap.values().stream().filter(node -> NodeState.LEADER.equals(node.getState())).findFirst().orElse(null);
+                    if (leader == null) {
+                        Thread.sleep(1000);
+                        continue;
+                    }
 
-            if (leader == null) {
-                Thread.sleep(1000);
-                continue;
+                    leader.disable();
+                    Thread.sleep(1000);
+                    leader.enable();
+                }
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex.getMessage(), ex);
             }
+        });
 
-            leader.disable();
-            Thread.sleep(1000);
-            leader.enable();
+        testingAlgorithm = TestingAlgorithm.FIND_AND_DISABLE_LEADER;
+        this.findAndDisableLeaderThread.start();
+    }
+
+    public void stopFindAndDisableLeader() {
+        this.testingAlgorithm = TestingAlgorithm.NONE;
+        if (this.findAndDisableLeaderThread != null) {
+            this.findAndDisableLeaderThread.interrupt();
         }
+    }
+
+    public TestingAlgorithm findTestingAlgorithm() {
+        return this.testingAlgorithm;
     }
 
     private void print(Node node) {
         log.info(String.format("NODE %s - timeout %s", node.getUuid(), node.getTimeoutInMs()));
     }
 
-    void chaosMonkey(int nodeNumber) throws InterruptedException {
-        Thread.sleep(1000);
+    public void chaosMonkey() {
+        this.chaosMonkeyThread = new Thread(() -> {
+            try {
+                Thread.sleep(1000);
 
-        while (true) {
-            disableRandomNode(nodeNumber);
+                while (true) {
+                    disableRandomNode(uuidToNodeMap.keySet().size());
+                }
+
+            } catch (InterruptedException e) {
+                throw new IllegalStateException(e.getMessage(), e);
+            }
+
+        });
+
+        testingAlgorithm = TestingAlgorithm.CHAOS_MONKEY;
+        this.chaosMonkeyThread.start();
+    }
+
+    public void stopChaosMonkey() {
+        this.testingAlgorithm = TestingAlgorithm.NONE;
+        if (this.chaosMonkeyThread != null) {
+            this.chaosMonkeyThread.interrupt();
         }
     }
 
@@ -164,13 +209,30 @@ public class Environment {
 
 
     public void update() {
-        Action actions = Action.builder().recordId(UUID.randomUUID().toString()).recordValue(UUID.randomUUID().toString()).type(OperationType.ADD).build();
-        ClientUpdateCommand command = ClientUpdateCommand.builder().actions(Collections.singletonList(actions)).build();
+        Action action = Action.builder().recordId(UUID.randomUUID().toString()).recordValue(UUID.randomUUID().toString()).type(OperationType.ADD).build();
+        update(action);
+    }
+
+    public void update(Action action) {
+
+        ClientUpdateCommand command = ClientUpdateCommand.builder().actions(Collections.singletonList(action)).build();
         Node leader = uuidToNodeMap.values()
                 .stream()
                 .filter(node -> NodeState.LEADER.equals(node.getState())).findFirst().orElseThrow(() -> new IllegalStateException("No leader"));
 
         Request req = Request.builder().type(RequestType.UPDATE).body(command).to(leader.getUuid()).build();
         Network.getInstance().handle(req);
+    }
+
+    public void disableNode(UUID nodeId) {
+        uuidToNodeMap.get(nodeId).disable();
+    }
+
+    public void enableNode(UUID nodeId) {
+        uuidToNodeMap.get(nodeId).enable();
+    }
+
+    public void switchNode(UUID nodeId) {
+        uuidToNodeMap.get(nodeId).switchState();
     }
 }

@@ -4,8 +4,8 @@
       <span
         class="dot"
         [ngClass]="{
-          leader: node.nodeState == 'LEADER',
-          candidate: node.nodeState == 'CANDIDATE',
+          leader: node.nodeState == 'LEADER' && !node.disabled,
+          candidate: node.nodeState == 'CANDIDATE' && !node.disabled,
           disabled: node.disabled
         }"
       ></span>
@@ -26,5 +26,9 @@
         <td>{{ node.lastOperationIdx }}</td>
       </tr>
     </td>
+    <!-- <td>
+      <button *ngIf="!node.disabled" (click)="disableNode()">DISABLE</button>
+      <button *ngIf="node.disabled" (click)="enableNode()">ENABLE</button>
+    </td> -->
   </tr>
 </table>
