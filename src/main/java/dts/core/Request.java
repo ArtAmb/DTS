@@ -9,6 +9,7 @@ import java.util.UUID;
 @Value
 public class Request {
     int electionNumber;
+    int lastCommittedOperationIdx;
 
     UUID from;
     UUID to;

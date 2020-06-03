@@ -12,6 +12,7 @@ public class AppendEntriesCommand {
     int lastIndex;
     int currentIndex;
     int lastCommittedIndex;
+    int lastCommittedElection;
 
     List<Operation> operations;
 }

@@ -1,7 +1,5 @@
 package dts.core;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import dts.commands.AppendEntriesCommand;
 import dts.commands.ClientUpdateCommand;
 import dts.commands.RequestVoteCommand;
@@ -52,6 +50,10 @@ class EntryLog {
         entryLog.add(entry.getOperationIndex(), entry.markAsPotential());
     }
 
+    public void removeExpiredOperations(int currentTerm) {
+        entryLog.removeIf(op -> op.isPotential() && !Objects.equals(op.getElectionNumber(), currentTerm));
+    }
+
     synchronized public void removeIf(Predicate<? super Operation> filter) {
         entryLog.removeIf(filter);
     }
@@ -85,6 +87,14 @@ class EntryLog {
 
     public int getLastConfirmedOperationIdx() {
         return lastConfirmedOperationIdx;
+    }
+
+    public Operation getLastConfirmedOperation() {
+        if (entryLog.isEmpty()) {
+            return Operation.builder().electionNumber(0).operationIndex(0).build();
+        }
+
+        return this.entryLog.get(lastConfirmedOperationIdx);
     }
 
     public List<Operation> confirmAll() {
@@ -210,6 +220,7 @@ public class Node {
 
         Request.RequestBuilder reqBuilder = Request.builder()
                 .body(command)
+                .lastCommittedOperationIdx(entryLog.getLastConfirmedOperationIdx())
                 .electionNumber(electionNumber)
                 .type(RequestType.REQUEST_VOTE)
                 .from(uuid);
@@ -259,17 +270,20 @@ public class Node {
 
     private Response<AppendEntriesResult> appendEntriesForOneNode(UUID otherNodeUUID) {
         List<Operation> operations = prepareOperations(otherNodeUUID);
+        Operation lastConfirmedOperation = entryLog.getLastConfirmedOperation();
 
         AppendEntriesCommand command = AppendEntriesCommand.builder()
                 .operations(operations)
                 .currentIndex(!operations.isEmpty() ? operations.get(operations.size() - 1).getOperationIndex() : lastOperationIndex)
-                .lastCommittedIndex(entryLog.getLastConfirmedOperationIdx())
+                .lastCommittedIndex(lastConfirmedOperation.getOperationIndex())
+                .lastCommittedElection(lastConfirmedOperation.getElectionNumber())
                 .lastIndex(lastOperationIndex)
                 .build();
 
         Request request = Request.builder()
                 .body(command)
                 .electionNumber(electionNumber)
+                .lastCommittedOperationIdx(entryLog.getLastConfirmedOperationIdx())
                 .type(RequestType.APPEND_ENTRIES)
                 .from(uuid)
                 .to(otherNodeUUID)
@@ -330,6 +344,12 @@ public class Node {
             throw new IllegalStateException(prepareErrMsgForOutdateLeader(request));
         }
 
+
+        Operation lastConfirmedOperation = entryLog.getLastConfirmedOperation();
+        if (lastConfirmedOperation.getOperationIndex() > command.getLastCommittedIndex()) {
+            throw new IllegalStateException(prepareMessageForLeaderWithOutdateEntryLog(request, command, lastConfirmedOperation));
+        }
+
         if (request.getElectionNumber() == this.electionNumber && NodeState.CANDIDATE.equals(this.state)) {
             this.state = NodeState.FOLLOWER;
             log.info("Node " + uuid + " was candidate but become follower - " + this.electionNumber + " " + request.getElectionNumber());
@@ -342,6 +362,8 @@ public class Node {
                 this.state = NodeState.FOLLOWER;
             }
         }
+
+        entryLog.removeExpiredOperations(request.getElectionNumber());
 
         resetElectionTimer();
 
@@ -365,6 +387,14 @@ public class Node {
 
 
         return appendEntriesSuccess();
+    }
+
+    private String prepareMessageForLeaderWithOutdateEntryLog(Request request, AppendEntriesCommand command, Operation lastConfirmedOperation) {
+        return String.format("Node[%s] -> CANNOT ACCEPT APPEND ENTRIES FROM NODE[%s] - MY LAST COMMITTED OPERATION[%s] IS GREATER THEN YOURS[%s]",
+                this.uuid,
+                request.getFrom(),
+                lastConfirmedOperation.getOperationIndex(),
+                command.getLastCommittedIndex());
     }
 
     private void confirmPotentialOperations(AppendEntriesCommand command) {
@@ -484,8 +514,10 @@ public class Node {
             return;
         }
 
-        if (request.getElectionNumber() > electionNumber) {
-            log.info("NODE " + this.uuid + " new election started " + request.getElectionNumber() + " My election " + electionNumber + " give vote and become follower");
+
+        if (outOfElection(request) || outOfCommittedOperation(request)) {
+            logAboutBecomingFollower(request);
+
             this.electionNumber = request.getElectionNumber();
             this.state = NodeState.FOLLOWER;
             this.votedFor = request.getFrom();
@@ -506,6 +538,25 @@ public class Node {
         this.votedFor = request.getFrom();
     }
 
+    private void logAboutBecomingFollower(Request request) {
+        //lco -> last commited operation
+
+        log.info(String.format("NODE[%s] -> new election started %s lco %s My election %s lco %s give vote and become follower",
+                this.uuid,
+                request.getElectionNumber(),
+                request.getLastCommittedOperationIdx(),
+                electionNumber,
+                entryLog.getLastConfirmedOperationIdx()));
+    }
+
+    private boolean outOfElection(Request request) {
+        return request.getElectionNumber() > electionNumber;
+    }
+
+    private boolean outOfCommittedOperation(Request request) {
+        return request.getLastCommittedOperationIdx() > entryLog.getLastConfirmedOperationIdx();
+    }
+
     public void updateState(Request request) {
 
         if (NodeState.CANDIDATE.equals(this.state)) {
@@ -516,6 +567,7 @@ public class Node {
             Request newRequest = Request.builder()
                     .body(request.getBody())
                     .electionNumber(electionNumber)
+                    .lastCommittedOperationIdx(entryLog.getLastConfirmedOperationIdx())
                     .type(RequestType.REQUEST_VOTE)
                     .from(uuid)
                     .to(leaderUUID).build();
