@@ -63,13 +63,13 @@ public class Environment {
     }
 
     public void stopSimulation() {
-        uuidToNodeMap.values().forEach(Node::disable);
-        uuidToNodeMap.clear();
-
         simulationRunning = false;
         testingAlgorithm = TestingAlgorithm.NONE;
         stopChaosMonkey();
         stopFindAndDisableLeader();
+
+        uuidToNodeMap.values().forEach(Node::disable);
+        uuidToNodeMap.clear();
 
         log.info("SIMULATION STOPPED");
     }
