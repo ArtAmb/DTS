@@ -218,6 +218,7 @@ public class Environment {
         ClientUpdateCommand command = ClientUpdateCommand.builder().actions(Collections.singletonList(action)).build();
         Node leader = uuidToNodeMap.values()
                 .stream()
+                .filter(node -> !node.isDisabled())
                 .filter(node -> NodeState.LEADER.equals(node.getState())).findFirst().orElseThrow(() -> new IllegalStateException("No leader"));
 
         Request req = Request.builder().type(RequestType.UPDATE).body(command).to(leader.getUuid()).build();

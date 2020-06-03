@@ -1,5 +1,7 @@
 package dts.core;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dts.commands.AppendEntriesCommand;
 import dts.commands.ClientUpdateCommand;
 import dts.commands.RequestVoteCommand;
@@ -20,6 +22,7 @@ https://indradhanush.github.io/blog/notes-on-raft/
 https://medium.com/@kasunindrasiri/understanding-raft-distributed-consensus-242ec1d2f521
 */
 
+@Log4j
 class EntryLog {
     private ArrayList<Operation> entryLog = new ArrayList<>();
     private int lastConfirmedOperationIdx;
@@ -58,10 +61,10 @@ class EntryLog {
             return Collections.emptyList();
 
         if (operationIndex < 0) {
-            return entryLog.subList(0, entryLog.size() - 1);
+            return entryLog.subList(0, entryLog.size());
         }
 
-        return entryLog.subList(operationIndex, entryLog.size() - 1);
+        return entryLog.subList(operationIndex, entryLog.size());
     }
 
     synchronized public List<Operation> confirm(int lastCommittedIdx) {
@@ -280,7 +283,7 @@ public class Node {
         OtherNode node = otherNodes.get(otherNodeUUID);
 
 
-        return entryLog.findOperations(node.getLastOperationIdx());
+        return entryLog.findOperations(node.getLastOperationIdx()).stream().map(Operation::clone).collect(Collectors.toList());
 
 //        if (!node.isConsistent(this.electionNumber, this.lastOperationIndex)) {
 //            return entryLog.findOperations(node.getLastOperationIdx());

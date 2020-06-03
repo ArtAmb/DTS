@@ -25,6 +25,19 @@ public class Operation {
         state = OperationState.CONFIRMED;
     }
 
+    public Operation clone() {
+        return Operation.builder()
+                .operationId(operationId)
+                .prevIndex(prevIndex)
+                .operationIndex(operationIndex)
+                .electionNumber(electionNumber)
+                .state(state)
+                .type(type)
+                .recordId(recordId)
+                .recordValue(recordValue)
+                .build();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Operation) {

@@ -2,6 +2,7 @@ package dts.core;
 
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -9,7 +10,28 @@ import java.util.Objects;
 public class Main {
 
     public static void main(String[] args) throws InterruptedException {
-        Environment.getInstance().runSimulation(3);
+//        Environment.getInstance().runSimulation(3);
+
+
+        ArrayList<Integer> tmp = new ArrayList<>();
+        tmp.add(1);
+
+        System.out.println(tmp.subList(0,0));
+        System.out.println(tmp.subList(0,1));
+        System.out.println(tmp.subList(0,tmp.size()));
+        System.out.println(tmp.get(0));
+        System.out.println(tmp.get(tmp.size() -1));
+
+        System.out.println("START");
+        tmp.add(1);
+        System.out.println(tmp.get(tmp.size() -1));
+        tmp.add(2);
+        System.out.println(tmp.get(tmp.size() -1));
+        tmp.add(3);
+        System.out.println(tmp.get(tmp.size() -1));
+        tmp.add(4);
+        System.out.println(tmp.get(tmp.size() -1));
+
     }
 
 
