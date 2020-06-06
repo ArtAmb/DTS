@@ -203,6 +203,7 @@ public class Environment {
                     .votedFor(node.getVotedFor())
                     .disabled(node.isDisabled())
                     .records(node.getRecords())
+                    .operations(node.getOperations())
                     .build();
         }).collect(Collectors.toList());
     }

@@ -109,6 +109,10 @@ class EntryLog {
         return this.entryLog.get(this.entryLog.size() - 1).getOperationIndex();
 
     }
+
+    public List<Operation> getAll() {
+        return this.entryLog;
+    }
 }
 
 @Getter
@@ -602,5 +606,9 @@ public class Node {
             disable();
         }
 
+    }
+
+    public List<Operation> getOperations() {
+        return this.entryLog.getAll();
     }
 }

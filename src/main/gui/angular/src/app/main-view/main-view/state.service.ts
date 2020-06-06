@@ -12,6 +12,7 @@ export class StateService {
   nodes: NodeState[];
   nodeCounter: number = 0;
   showRecordsEnable: boolean = false;
+  showOperationsEnable: boolean = false;
   nodeFlow: string = 'VERTICAL';
 
   public isSimulationRunning() {
@@ -39,6 +40,10 @@ export class StateService {
 
   public setShowRecords(value: boolean) {
     this.showRecordsEnable = value;
+  }
+
+  public setShowOperations(value: boolean) {
+    this.showOperationsEnable = value;
   }
 
   public setNodesFlow(value: string) {

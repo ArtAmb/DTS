@@ -30,6 +30,14 @@
     HIDE RECORDS
   </button>
 
+  <button *ngIf="!isShowOperationEnable()" (click)="setShowOperations(true)" >
+    SHOW OPERATIONS
+  </button>
+  <button *ngIf="isShowOperationEnable()" (click)="setShowOperations(false)">
+    HIDE OPERATIONS
+  </button>
+  
+
   <button *ngIf="getNodesViewFlow() == 'VERTICAL'" (click)="setNodesFlow('HORIZONTAL')" >
     HORIZONTAL
   </button>

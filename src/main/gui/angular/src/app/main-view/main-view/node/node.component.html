@@ -29,12 +29,32 @@
     <!-- <td>
       <button *ngIf="!node.disabled" (click)="disableNode()">DISABLE</button>
       <button *ngIf="node.disabled" (click)="enableNode()">ENABLE</button>
-    </td> -->
+    </td>  -->
   </tr>
 
   <span *ngIf="isRecordsViewEnable()">
     <tr *ngFor="let record of node.records | keyvalue">
       <td>{{ record.key }} : {{ record.value.value }}</td>
+    </tr>
+  </span>
+  <span *ngIf="isOperationsViewEnable()">
+    <tr *ngFor="let operation of node.operations">
+      <td
+        [ngClass]="{
+          op_potentail: operation.state == 'POTENTIAL',
+          op_confirmed: operation.state == 'CONFIRMED'
+        }"
+      >
+        <tr>
+          <td>
+            Idx: {{ operation.operationIndex }} E:
+            {{ operation.electionNumber }}
+          </td>
+        </tr>
+        <tr>
+          <td>{{ operation.recordId }} : {{ operation.recordValue }}</td>
+        </tr>
+      </td>
     </tr>
   </span>
 </table>

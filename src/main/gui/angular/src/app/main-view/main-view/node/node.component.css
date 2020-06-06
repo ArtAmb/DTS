@@ -18,3 +18,14 @@
 .candidate {
   background-color: gray !important;
 }
+
+
+.op_potentail {
+  border-style: solid;
+  border-color: gray;
+}
+
+.op_confirmed {
+  border-style: solid;
+  border-color: green;
+}

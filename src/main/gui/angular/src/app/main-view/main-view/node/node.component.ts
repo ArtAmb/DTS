@@ -40,4 +40,8 @@ export class NodeComponent implements OnInit {
   isRecordsViewEnable() {
     return this.stateService.showRecordsEnable;
   }
+
+  isOperationsViewEnable() {
+    return this.stateService.showOperationsEnable;
+  }
 }

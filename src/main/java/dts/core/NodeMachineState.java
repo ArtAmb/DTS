@@ -3,6 +3,7 @@ package dts.core;
 import lombok.Builder;
 import lombok.Value;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,4 +21,5 @@ public class NodeMachineState {
     private final boolean disabled;
 
     private final Map<String, Record> records;
+    private final List<Operation> operations;
 }

@@ -21,8 +21,16 @@ export class ButtonsComponent implements OnInit {
     return this.stateServcie.showRecordsEnable;
   }
 
+  isShowOperationEnable() {
+    return this.stateServcie.showOperationsEnable;
+  }
+  
   setShowRecord(value: boolean) {
     this.stateServcie.setShowRecords(value);
+  }
+
+  setShowOperations(value: boolean) {
+    this.stateServcie.setShowOperations(value);
   }
 
   setNodesFlow(value: string) {
