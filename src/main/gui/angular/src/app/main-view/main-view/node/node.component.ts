@@ -44,4 +44,8 @@ export class NodeComponent implements OnInit {
   isOperationsViewEnable() {
     return this.stateService.showOperationsEnable;
   }
+
+  getNodeIndex() {
+    return this.stateService.getNodeIdx(this.node.nodeId);
+  }
 }

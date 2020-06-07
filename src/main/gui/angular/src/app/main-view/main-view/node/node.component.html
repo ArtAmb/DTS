@@ -18,6 +18,10 @@
         </td>
       </tr>
       <tr>
+        <td>Index</td>
+        <td>{{ getNodeIndex() }}</td>
+      </tr>
+      <tr>
         <td>Last committed</td>
         <td>{{ node.lastCommittedIdx }}</td>
       </tr>
@@ -51,8 +55,11 @@
             {{ operation.electionNumber }}
           </td>
         </tr>
-        <tr>
+        <tr *ngIf="operation.type != 'DELETE'">
           <td>{{ operation.recordId }} : {{ operation.recordValue }}</td>
+        </tr>
+        <tr *ngIf="operation.type == 'DELETE'">
+          <td>DELETE {{ operation.recordId }}</td>
         </tr>
       </td>
     </tr>

@@ -63,6 +63,16 @@ export class RestService {
         return this.http.post(environment.server_url + "/simulation/record/save", cmd);
     }
 
+    public saveRecordForNode(nodeId: string, cmd: RecordCommand): Observable<any>  { 
+        return this.http.post(environment.server_url + "/simulation/record/save/node/" + nodeId + "/", cmd);
+    }
+    public setRestrictionValue(enabled: boolean): Observable<any> {
+        return this.http.post(environment.server_url + "/simulation/raft/success-restriction/" + enabled, null);
+    }
+
+    public isRestrictionEnabled(): Observable<any> {
+        return this.http.get(environment.server_url + "/simulation/raft/success-restriction");
+    }
 
 }
 
@@ -78,7 +88,7 @@ export class SimulationRunningDTO {
 export class RecordCommand {
     type: OperationType;
     recordId: string;
-    recordValue: string;
+    recordValue: String;
 }
 
 export  enum OperationType {

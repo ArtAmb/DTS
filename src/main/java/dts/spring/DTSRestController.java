@@ -84,5 +84,21 @@ public class DTSRestController {
         simulationService.updateRecord(action);
     }
 
+    @PostMapping("/simulation/record/save/node/{nodeId}/")
+    public void updateRecordForNode(@PathVariable UUID nodeId, @RequestBody Action action) {
+        simulationService.updateRecord(nodeId, action);
+    }
+
+    @PostMapping("/simulation/raft/success-restriction/{enable}")
+    public void updateSuccessRestriction(@PathVariable Boolean enable) {
+        simulationService.updateSuccessRestriction(enable);
+    }
+
+    @GetMapping("/simulation/raft/success-restriction")
+    public Boolean isRestrictionEnabled() {
+        return simulationService.isRestrictionEnabled();
+    }
+
+
 }
 

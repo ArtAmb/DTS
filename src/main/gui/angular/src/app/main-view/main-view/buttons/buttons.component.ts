@@ -16,6 +16,7 @@ export class ButtonsComponent implements OnInit {
   ) {}
 
   testingAlgorithm: TestingAlgorithm = TestingAlgorithm.NONE;
+  restrictionEnabled: boolean;
 
   isShowRecordEnable() {
     return this.stateServcie.showRecordsEnable;
@@ -41,9 +42,27 @@ export class ButtonsComponent implements OnInit {
     return this.stateServcie.nodeFlow;
   }
 
+  setRestrictionValue(value: boolean) {
+    this.restService.setRestrictionValue(value).subscribe(res => {
+      this.refreshRestrictionValue();
+      this.notifyService.success();
+    }, err => {
+      this.notifyService.failure(err);
+    })
+  }
+
+  refreshRestrictionValue() {
+    this.restService.isRestrictionEnabled().subscribe(res => {
+      this.restrictionEnabled = res;
+    }, err => {
+      this.notifyService.failure(err);
+    })
+  }
+
 
   ngOnInit() {
     this.setTestingAlgorithm();
+    this.refreshRestrictionValue();
   }
 
   isButtonEnabled() {

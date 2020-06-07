@@ -21,7 +21,15 @@
 </div>
 
 <div style="margin-top: 20px;">
-  <input [(ngModel)]="recordKey" /><input [(ngModel)]="recordValue" />
+  <input [(ngModel)]="recordKey" /><input [(ngModel)]="recordValue" /> 
+  <span style="margin-left: 10px; font-size: 30px; font-weight: bold;">
+    <span style ="cursor: pointer;" *ngIf="selectedOperationType == 'DELETE'" (click)="saveOperationType('ADD')">-</span>
+    <span style ="cursor: pointer;" *ngIf="selectedOperationType == 'ADD'" (click)="saveOperationType('DELETE')">+</span>
+  </span>
   <br />
   <button (click)="saveRecord()">SAVE</button>
+  <select [(ngModel)]="selectedNodeId">
+    <option value="{{nodeInfo.nodeId}}" *ngFor="let nodeInfo of getNodesInfo()">{{nodeInfo.nodeIdx}}</option>
+  </select>
+  <button (click)="saveRecordForNode()">SAVE FOR NODE</button>
 </div>

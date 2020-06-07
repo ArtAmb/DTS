@@ -162,7 +162,7 @@ public class Node {
     private UUID votedFor = null;
 
 
-    public static Integer ERROR_TIMEOUT = 2000;
+    public static Integer ERROR_TIMEOUT = 4000;
 
     @Builder
     public Node(UUID uuid,
@@ -256,6 +256,10 @@ public class Node {
 
         if (summary.isSuccessesCounterAtLeastHalf()) {
             confirmEntriesLog();
+        } else {
+            if(Environment.getInstance().isSuccessRestriction()) {
+                throw new IllegalStateException("Cannot save new operations cause most of nodes returned errors");
+            }
         }
     }
 
@@ -572,7 +576,7 @@ public class Node {
                     .body(request.getBody())
                     .electionNumber(electionNumber)
                     .lastCommittedOperationIdx(entryLog.getLastConfirmedOperationIdx())
-                    .type(RequestType.REQUEST_VOTE)
+                    .type(RequestType.UPDATE)
                     .from(uuid)
                     .to(leaderUUID).build();
 

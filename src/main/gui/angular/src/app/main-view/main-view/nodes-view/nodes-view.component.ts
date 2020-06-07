@@ -18,16 +18,22 @@ export class NodesViewComponent implements OnInit {
   ) {}
 
   allNodes: Array<Node> = [];
-
+  selectedNodeId: String = null;
+  selectedOperationType: OperationType = OperationType.ADD;
   recordKey: String;
   recordValue: String;
 
   saveRecord() {
+    if(this.recordKey == null) {
+      this.notifyService.showMessage("Klucz rekordu jest WYMAGANY!");
+      return;
+    }
+    
     this.restService
       .saveRecord({
-        type: OperationType.ADD,
+        type: this.selectedOperationType,
         recordId: this.recordKey.toString(),
-        recordValue: this.recordValue.toString(),
+        recordValue: this.recordValue,
       })
       .subscribe(
         (res) => {
@@ -39,6 +45,44 @@ export class NodesViewComponent implements OnInit {
           this.notifyService.failure(err);
         }
       );
+  }
+
+  saveRecordForNode() {
+    if(this.recordKey == null) {
+      this.notifyService.showMessage("Klucz rekordu jest WYMAGANY!");
+      return;
+    }
+
+    if(this.selectedNodeId == null) {
+      this.notifyService.showMessage("Prosze wybrac node do wykonania operacji");
+      return;
+    }
+
+    this.restService
+    .saveRecordForNode(
+      this.selectedNodeId.toString(), {
+      type: this.selectedOperationType,
+      recordId: this.recordKey.toString(),
+      recordValue: this.recordValue,
+    })
+    .subscribe(
+      (res) => {
+        this.notifyService.success("Rekord dodany");
+        this.recordKey = null;
+        this.recordValue = null;
+      },
+      (err) => {
+        this.notifyService.failure(err);
+      }
+    );
+  }
+
+  saveOperationType(type: OperationType) {
+    this.selectedOperationType = type;
+
+    if(type == OperationType.DELETE) {
+      this.recordValue = null;
+    }
   }
 
   ngOnInit() {

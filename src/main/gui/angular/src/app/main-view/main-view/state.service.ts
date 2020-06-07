@@ -10,6 +10,9 @@ export class StateService {
 
   simulation: boolean;
   nodes: NodeState[];
+
+  nodesByIdMAP = {}
+
   nodeCounter: number = 0;
   showRecordsEnable: boolean = false;
   showOperationsEnable: boolean = false;
@@ -36,6 +39,10 @@ export class StateService {
         nodeIdx: ++this.nodeCounter
       } 
     });
+
+    this.nodes.forEach(node => {
+      this.nodesByIdMAP[node.nodeId.toString()] = node;
+    })
   }
 
   public setShowRecords(value: boolean) {
@@ -48,6 +55,13 @@ export class StateService {
 
   public setNodesFlow(value: string) {
     this.nodeFlow = value;
+  }
+
+  public getNodeIdx(nodeUUID: string): number {
+    // console.log("getNodeIdx");
+    // console.log(nodeUUID);
+    // console.log(this.nodesByIdMAP);
+    return this.nodesByIdMAP[nodeUUID].nodeIdx;
   }
 }
 

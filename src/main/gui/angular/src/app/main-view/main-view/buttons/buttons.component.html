@@ -44,4 +44,14 @@
   <button *ngIf="getNodesViewFlow() == 'HORIZONTAL'" (click)="setNodesFlow('VERTICAL')">
     VERTICAL
   </button>
+
+  <div>
+    <span>RAFT RESTRICTION: {{restrictionEnabled}}</span>
+    <button *ngIf="restrictionEnabled" (click)="setRestrictionValue('false')" >
+      DISABLE
+    </button>
+    <button *ngIf="!restrictionEnabled" (click)="setRestrictionValue('true')">
+      ENABLE
+    </button>
+  </div>
 </div>

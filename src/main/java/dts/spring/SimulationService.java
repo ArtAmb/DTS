@@ -65,4 +65,16 @@ public class SimulationService {
     public void updateRecord(Action action) {
         environment.update(action);
     }
+
+    public void updateSuccessRestriction(Boolean enable) {
+        environment.updateSuccessRestriction(enable);
+    }
+
+    public Boolean isRestrictionEnabled() {
+        return environment.isSuccessRestriction();
+    }
+
+    public void updateRecord(UUID nodeId, Action action) {
+        environment.update(nodeId, action);
+    }
 }

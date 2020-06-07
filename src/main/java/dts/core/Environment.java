@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import dts.commands.Action;
 import dts.commands.ClientUpdateCommand;
 import dts.spring.SimulationRunningDTO;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j;
 
 import java.util.*;
@@ -14,6 +15,8 @@ import java.util.stream.Collectors;
 @Log4j
 public class Environment {
     private static final Environment instance = new Environment();
+    @Getter
+    private volatile boolean successRestriction = false;
 
     public static Environment getInstance() {
         return instance;
@@ -226,6 +229,14 @@ public class Environment {
         Network.getInstance().handle(req);
     }
 
+    public void update(UUID nodeId, Action action) {
+        ClientUpdateCommand command = ClientUpdateCommand.builder().actions(Collections.singletonList(action)).build();
+        Node node = uuidToNodeMap.get(nodeId);
+
+        Request req = Request.builder().type(RequestType.UPDATE).body(command).to(node.getUuid()).build();
+        Network.getInstance().handle(req);
+    }
+
     public void disableNode(UUID nodeId) {
         uuidToNodeMap.get(nodeId).disable();
     }
@@ -236,5 +247,9 @@ public class Environment {
 
     public void switchNode(UUID nodeId) {
         uuidToNodeMap.get(nodeId).switchState();
+    }
+
+    public synchronized void updateSuccessRestriction(Boolean enable) {
+        this.successRestriction = enable;
     }
 }
