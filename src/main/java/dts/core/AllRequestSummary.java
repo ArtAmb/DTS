@@ -1,10 +1,12 @@
 package dts.core;
 
 import lombok.Getter;
+import lombok.extern.log4j.Log4j;
 
 import java.util.List;
 
 @Getter
+@Log4j
 public class AllRequestSummary {
     private final List<Response> responses;
     private final long size;
@@ -18,6 +20,7 @@ public class AllRequestSummary {
 
 
     public boolean isSuccessesCounterAtLeastHalf() {
+        log.info(successes + " " + (size / 2));
         return successes >= (size / 2);
 
     }

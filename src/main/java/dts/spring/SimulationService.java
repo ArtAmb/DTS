@@ -77,4 +77,12 @@ public class SimulationService {
     public void updateRecord(UUID nodeId, Action action) {
         environment.update(nodeId, action);
     }
+
+    public void twoLeaders() {
+        environment.twoLeaders();
+    }
+
+    public void twoCandidates() {
+        environment.twoCandidates();
+    }
 }

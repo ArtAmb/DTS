@@ -7,6 +7,7 @@ import dts.commands.ClientUpdateCommand;
 import dts.spring.SimulationRunningDTO;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j;
+import lombok.val;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -251,5 +252,33 @@ public class Environment {
 
     public synchronized void updateSuccessRestriction(Boolean enable) {
         this.successRestriction = enable;
+    }
+
+
+    public synchronized void twoLeaders() {
+        findPairNodesWithSameElection().forEach(Node::forceLeader);
+    }
+
+    public synchronized void twoCandidates() {
+        findPairNodesWithSameElection().forEach(Node::forceCandidate);
+    }
+
+    private synchronized List<Node> findPairNodesWithSameElection() {
+        Map<Integer, List<Node>> map = uuidToNodeMap.values().stream()
+                .collect(Collectors.groupingBy(Node::getElectionNumber));
+
+        val nodesWithSameElection = map.entrySet()
+                .stream().filter(es -> es.getValue().size() > 1)
+                .collect(Collectors.toList());
+
+        if (nodesWithSameElection.isEmpty()) {
+            throw new IllegalStateException("All nodes have different election number");
+        }
+
+        Map.Entry<Integer, List<Node>> maxElectionNodes = nodesWithSameElection.stream()
+                .max(Comparator.comparingInt(Map.Entry::getKey))
+                .orElseThrow(() -> new IllegalStateException("Max election not found"));
+
+        return maxElectionNodes.getValue();
     }
 }

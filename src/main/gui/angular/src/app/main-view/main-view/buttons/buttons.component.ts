@@ -135,6 +135,28 @@ export class ButtonsComponent implements OnInit {
       }
     );
   }
+
+  twoCandidates() {
+    this.restService.twoCandidates().subscribe(
+      (res) => {
+        this.notifyService.success();
+      },
+      (err) => {
+        this.notifyService.failure(err);
+      }
+    );
+  }
+
+  twoLeaders() { 
+    this.restService.twoLeaders().subscribe(
+      (res) => {
+        this.notifyService.success();
+      },
+      (err) => {
+        this.notifyService.failure(err);
+      }
+    );
+  }
 }
 
 enum TestingAlgorithm {

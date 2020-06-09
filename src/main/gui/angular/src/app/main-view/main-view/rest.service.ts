@@ -8,6 +8,7 @@ import { Node } from "./node/node.model";
     providedIn: "root"
 })
 export class RestService {
+
     constructor(private http: HttpClient) {
     }
 
@@ -72,6 +73,14 @@ export class RestService {
 
     public isRestrictionEnabled(): Observable<any> {
         return this.http.get(environment.server_url + "/simulation/raft/success-restriction");
+    }
+    
+    public twoCandidates() {
+        return this.http.post(environment.server_url + "/simulation/two-candidates", null);
+    }
+
+    public twoLeaders() {
+        return this.http.post(environment.server_url + "/simulation/two-leaders", null);
     }
 
 }

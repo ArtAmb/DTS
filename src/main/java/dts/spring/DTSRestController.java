@@ -100,5 +100,15 @@ public class DTSRestController {
     }
 
 
+    @PostMapping("/simulation/two-candidates")
+    public void twoCandidates() {
+        simulationService.twoCandidates();
+    }
+
+    @PostMapping("/simulation/two-leaders")
+    public void twoLeaders() {
+        simulationService.twoLeaders();
+    }
+
 }
 

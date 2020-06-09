@@ -10,6 +10,7 @@ import lombok.val;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -159,7 +160,8 @@ public class Node {
 
 
     private UUID leaderUUID;
-    private UUID votedFor = null;
+    volatile private UUID votedFor = null;
+    private AtomicBoolean changeState = new AtomicBoolean(false);
 
 
     public static Integer ERROR_TIMEOUT = 4000;
@@ -194,9 +196,21 @@ public class Node {
                 startElection();
             }
         }, timeoutInMs);
+        changeState.set(false);
     }
 
     private void startElection() {
+        if(disabled) {
+            log.info("I am disabled so cancel timer - node " + uuid);
+            this.timer.cancel();
+            return;
+        }
+
+        if(changeState.get()) {
+            log.info("Changing state - do nothing - node " + uuid);
+            return;
+        }
+
         if (!NodeState.LEADER.equals(this.state)) {
             this.electionNumber++;
             this.state = NodeState.CANDIDATE;
@@ -211,7 +225,7 @@ public class Node {
     private void startGatheringVotes() {
         AllRequestSummary summary = requestVotesFromOtherNodes();
 
-        if (summary.isSuccessesCounterAtLeastHalf()) {
+        if (summary.isSuccessesCounterAtLeastHalf() && this.votedFor.equals(uuid)) {
             becomeLeader();
         } else {
             this.votedFor = null;
@@ -249,9 +263,21 @@ public class Node {
         }, 0, heartbeatIntervalTimeInMs);
 
         log.info(uuid + " became leader of election " + electionNumber);
+        changeState.set(false);
     }
 
     private void doLeaderJob() {
+        if(disabled) {
+            log.info("I am disabled so cancel timer - node " + uuid);
+            this.timer.cancel();
+            return;
+        }
+
+        if(changeState.get()) {
+            log.info("LeaderJon - Changing state - do nothing - node " + uuid);
+            return;
+        }
+
         AllRequestSummary summary = sendAppendEntriesToAllOtherNodes();
 
         if (summary.isSuccessesCounterAtLeastHalf()) {
@@ -358,7 +384,7 @@ public class Node {
             throw new IllegalStateException(prepareMessageForLeaderWithOutdateEntryLog(request, command, lastConfirmedOperation));
         }
 
-        if (request.getElectionNumber() == this.electionNumber && NodeState.CANDIDATE.equals(this.state)) {
+        if (request.getElectionNumber() >= this.electionNumber && NodeState.CANDIDATE.equals(this.state)) {
             this.state = NodeState.FOLLOWER;
             log.info("Node " + uuid + " was candidate but become follower - " + this.electionNumber + " " + request.getElectionNumber());
         }
@@ -368,6 +394,8 @@ public class Node {
                 log.info("Node " + uuid + " become follower - " + this.electionNumber + " " + request.getElectionNumber());
                 this.electionNumber = request.getElectionNumber();
                 this.state = NodeState.FOLLOWER;
+            } else {
+                throw new IllegalStateException("ERROR - two leaders ??? - my uuid" + uuid + " other leader uuid" + request.getFrom());
             }
         }
 
@@ -378,6 +406,7 @@ public class Node {
         this.leaderUUID = request.getFrom();
         this.votedFor = null;
         this.electionNumber = request.getElectionNumber();
+        this.state = NodeState.FOLLOWER;
 
         if (command.getLastIndex() == lastOperationIndex) {
             log.info("NODE " + uuid + "command.getLastIndex() == lastOperationIndex");
@@ -512,7 +541,7 @@ public class Node {
             resetElectionTimer();
         }
 
-        log.info(uuid + " DISALED ? " + disabled);
+        log.info(uuid + " DISABLED ? " + disabled);
     }
 
     public void requestVote(Request request) throws InterruptedException {
@@ -524,6 +553,7 @@ public class Node {
 
 
         if (outOfElection(request) || outOfCommittedOperation(request)) {
+            changeState.set(true);
             logAboutBecomingFollower(request);
 
             this.electionNumber = request.getElectionNumber();
@@ -614,5 +644,21 @@ public class Node {
 
     public List<Operation> getOperations() {
         return this.entryLog.getAll();
+    }
+
+
+    public void forceLeader() {
+        this.disabled = false;
+        this.electionNumber++;
+        becomeLeader();
+    }
+
+    public void forceCandidate() {
+        this.disabled = false;
+        this.electionNumber++;
+        this.timer.cancel();
+        this.state = NodeState.CANDIDATE;
+        this.votedFor = uuid;
+        startGatheringVotes();
     }
 }
